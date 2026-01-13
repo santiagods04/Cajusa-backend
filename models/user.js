@@ -1,74 +1,109 @@
-const mongoose = require('mongoose');
-const validator = require('validator');
-const bcrypt = require('bcryptjs');
-const UnauthorizedError = require('../errors/UnauthorizedError');
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const validator = require("validator");
+const UnauthorizedError = require("../errors/UnauthorizedError");
+const addressSchema = new mongoose.Schema(
+  {
+    label: { type: String, default: "Casa", trim: true },
+    fullName: { type: String, required: true, trim: true },
+    phone: { type: String, required: true, trim: true },
+    line1: { type: String, required: true, trim: true },
+    line2: { type: String, default: "", trim: true },
+    city: { type: String, required: true, trim: true },
+    state: { type: String, default: "Cundinamarca", trim: true },
+    country: { type: String, default: "Colombia", trim: true },
+    postalCode: { type: String, default: "", trim: true },
+    notes: { type: String, default: "", trim: true },
+    isDefault: { type: Boolean, default: false },
+  },
+  { _id: true }
+);
 
-const urlRegex = /^(https?:\/\/)(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)$/;
-const DEFAULT_AVATAR = 'https://practicum-content.s3.us-west-1.amazonaws.com/resources/moved_avatar_1604080799.jpg';
+const cartItemSchema = new mongoose.Schema(
+  {
+    productId: { type: mongoose.Schema.Types.ObjectId, required: true },
+    qty: { type: Number, required: true, min: 1, default: 1 },
+    variant: {
+      size: { type: String, default: "", trim: true },
+      color: { type: String, default: "", trim: true },
+    },
+  },
+  { _id: true }
+);
 
 const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      default: 'Jacques Cousteau',
-      minlength: 2,
-      maxlength: 30,
+      required: true,
       trim: true,
-    },
-
-    about: {
-      type: String,
-      default: 'Explorador',
       minlength: 2,
-      maxlength: 30,
-      trim: true,
+      maxlength: 60,
     },
-
-    avatar: {
+    nickname: {
       type: String,
-      default: DEFAULT_AVATAR,
-      validate: {
-        validator: (v) => urlRegex.test(v),
-        message: 'URL de avatar inválida',
-      },
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+      minlength: 3,
+      maxlength: 30,
+      match: [/^[a-z0-9._-]+$/, "Nickname inválido"],
     },
-
-    email: {
+    phone: {
       type: String,
       required: true,
       unique: true,
       trim: true,
+      match: [/^\+\d{8,15}$/, "Teléfono inválido"],
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
       lowercase: true,
+      trim: true,
       validate: {
         validator: (v) => validator.isEmail(v),
-        message: 'Email inválido',
+        message: "Email inválido",
       },
     },
-
     password: {
       type: String,
       required: true,
       minlength: 8,
       select: false,
     },
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
+
+    favorites: [{ type: mongoose.Schema.Types.ObjectId, default: [] }],
+    cart: { type: [cartItemSchema], default: [] },
+    addresses: { type: [addressSchema], default: [] },
   },
-  { versionKey: false }
+  { timestamps: true }
 );
 
-userSchema.statics.findUserByCredentials = function (email, password) {
-  return this.findOne({ email }).select('+password')
+userSchema.statics.findUserByCredentials = function findUserByCredentials(
+  email,
+  password
+) {
+  return this.findOne({ email })
+    .select("+password")
     .then((user) => {
       if (!user) {
-        return Promise.reject(new UnauthorizedError('Correo o contraseña incorrectos'));
+        throw new UnauthorizedError("Correo o contraseña incorrectos");
       }
-
       return bcrypt.compare(password, user.password).then((matched) => {
         if (!matched) {
-          return Promise.reject(new UnauthorizedError('Correo o contraseña incorrectos'));
+          throw new UnauthorizedError("Correo o contraseña incorrectos");
         }
         return user;
       });
     });
 };
 
-module.exports = mongoose.model('user', userSchema);
+module.exports = mongoose.model("User", userSchema);

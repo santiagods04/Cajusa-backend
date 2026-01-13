@@ -1,19 +1,16 @@
 const { celebrate, Joi } = require('celebrate');
-const validator = require('validator');
-
-const validateURL = (value, helpers) => {
-  if (validator.isURL(value)) {
-    return value;
-  }
-  return helpers.error('string.uri');
-};
 
 const validateSignup = celebrate({
   body: Joi.object().keys({
+    name: Joi.string().min(2).max(60).required(),
+    nickname: Joi.string().min(3).max(30).pattern(/^[a-z0-9._-]+$/i).required(),
     email: Joi.string().required().email(),
+    phone: Joi.string().pattern(/^\+\d{8,15}$/).required(),
     password: Joi.string().required().min(8),
-  }),
+    confirmPassword: Joi.string().valid(Joi.ref('password')).required(),
+  }).unknown(false), 
 });
+
 
 const validateSignin = celebrate({
   body: Joi.object().keys({
@@ -22,44 +19,36 @@ const validateSignin = celebrate({
   }),
 });
 
-const validateUserId = celebrate({
-  params: Joi.object().keys({
-    userId: Joi.string().required().hex().length(24),
-  }),
-});
-
-const validateUpdateUser = celebrate({
+const validateAddress = celebrate({
   body: Joi.object().keys({
-    name: Joi.string().required().min(2).max(30),
-    about: Joi.string().required().min(2).max(30),
+    label: Joi.string().optional().allow(''),
+    fullName: Joi.string().required(),
+    phone: Joi.string().required(),
+    line1: Joi.string().required(),
+    line2: Joi.string().optional().allow(''),
+    city: Joi.string().required(),
+    state: Joi.string().optional().allow(''),
+    country: Joi.string().optional().allow(''),
+    postalCode: Joi.string().optional().allow(''),
+    notes: Joi.string().optional().allow(''),
+    isDefault: Joi.boolean().optional(),
   }),
 });
 
-const validateUpdateAvatar = celebrate({
+const validateCartUpsert = celebrate({
   body: Joi.object().keys({
-    avatar: Joi.string().required().custom(validateURL),
-  }),
-});
-
-const validateCardId = celebrate({
-  params: Joi.object().keys({
-    cardId: Joi.string().required().hex().length(24),
-  }),
-});
-
-const validateCreateCard = celebrate({
-  body: Joi.object().keys({
-    name: Joi.string().required().min(2).max(30),
-    link: Joi.string().required().custom(validateURL),
+    productId: Joi.string().length(24).hex().required(),
+    qty: Joi.number().min(1).required(),
+    variant: Joi.object({
+      size: Joi.string().optional().allow(''),
+      color: Joi.string().optional().allow(''),
+    }).optional(),
   }),
 });
 
 module.exports = {
   validateSignup,
   validateSignin,
-  validateUserId,
-  validateUpdateUser,
-  validateUpdateAvatar,
-  validateCardId,
-  validateCreateCard,
+  validateAddress,
+  validateCartUpsert,
 };

@@ -4,7 +4,6 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 
 const usersRouter = require('./routes/users');
-const cardsRouter = require('./routes/cards');
 const authRouter = require('./routes/auth');
 const auth = require('./middlewares/auth');
 
@@ -40,7 +39,6 @@ app.use(requestLogger);
 app.use('/', authRouter);
 
 app.use('/users', auth, usersRouter);
-app.use('/cards', auth, cardsRouter);
 
 app.use( (req, res, next) => {
   next(new NotFoundError('Recurso no encontrado'));

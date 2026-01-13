@@ -1,14 +1,30 @@
-const { Router } = require('express');
-const {getUsers, getUserById, getCurrentUser, updateUserProfile, updateUserAvatar} = require('../controllers/users');
-const { validateUserId, validateUpdateUser, validateUpdateAvatar } = require('../middlewares/validation');
+const router = require('express').Router();
+const {
+  getCurrentUser,
+  addAddress,
+  setDefaultAddress,
+  deleteAddress,
+  toggleFavorite,
+  upsertCartItem,
+  removeCartItem,
+  clearCart,
+} = require('../controllers/users');
 
-const router = Router();
+const { validateAddress, validateCartUpsert } = require('../middlewares/validation');
 
-router.get('/', getUsers);
 router.get('/me', getCurrentUser);
-router.patch('/me', validateUpdateUser, updateUserProfile);
-router.patch('/me/avatar', validateUpdateAvatar, updateUserAvatar);
-router.get('/:userId', validateUserId, getUserById);
+// Direcciones
+router.post('/me/addresses', validateAddress, addAddress);
+router.patch('/me/addresses/:addressId/default', setDefaultAddress);
+router.delete('/me/addresses/:addressId', deleteAddress);
 
+// Favoritos
+router.put('/me/favorites/:productId', toggleFavorite);
+router.delete('/me/favorites/:productId', toggleFavorite);
+
+// Carrito
+router.put('/me/cart', validateCartUpsert, upsertCartItem);
+router.delete('/me/cart/:itemId', removeCartItem);
+router.delete('/me/cart', clearCart);
 
 module.exports = router;
