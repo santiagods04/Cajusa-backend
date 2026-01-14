@@ -19,6 +19,8 @@ module.exports = (err, req, res, next) => {
       err.message = "Ese teléfono ya está registrado";
     else if (err.keyPattern?.nickname)
       err.message = "Ese nickname ya está registrado";
+    else if (err.keyPattern?.code)
+      err.message = "Ese código de producto ya está registrado";
     else err.message = "Dato duplicado";
   }
 
